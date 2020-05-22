@@ -1,0 +1,28 @@
+{
+    "name": "ai-soft/cake-request-checker",
+    "description": "RequestChecker for CakePHP",
+    "keywords": ["cakephp"],
+    "type": "cakephp-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": ">=7.3.0",
+        "cakephp/event": "^4.0",
+        "cakephp/http": "^4.0"
+    },
+    "require-dev": {
+        "cakephp/cakephp-codesniffer": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "RequestChecker\\": "src/"
+        }
+    },
+    "scripts": {
+        "check": ["@cs-check"],
+        "cs-check": "phpcs --colors -p src/",
+        "cs-fix": "phpcbf --colors -p src/"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
