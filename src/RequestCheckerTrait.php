@@ -125,9 +125,9 @@ trait RequestCheckerTrait
      * @param mixed $value Float value
      * @param float|null|false $default Default value (false = throw)
      * @param int $code HTTP code
-     * @return int|null
+     * @return float|null
      */
-    protected function _checkFloat($value, $default = false, int $code = 404): ?int
+    protected function _checkFloat($value, $default = false, int $code = 404): ?float
     {
         $value = $this->_checkString($value, $default, $code);
         if ($value === $default) {
