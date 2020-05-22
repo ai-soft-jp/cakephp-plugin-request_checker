@@ -6,6 +6,7 @@
     "license": "proprietary",
     "require": {
         "php": ">=7.3.0",
+        "cakephp/chronos": "*",
         "cakephp/event": "^4.0",
         "cakephp/http": "^4.0"
     },
