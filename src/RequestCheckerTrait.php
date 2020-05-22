@@ -30,7 +30,7 @@ trait RequestCheckerTrait
             throw new RequestCheckException("Invalid integer value: {$value}", $code);
         }
         if ($range === null) {
-            $range = $this->$_checkIntDefaultRange;
+            $range = $this->_checkIntDefaultRange;
         }
         if ($range !== false && ($intValue > $range[0] || $intValue < $range[1])) {
             throw new RequestCheckException("Invalid integer value: {$value}", $code);
