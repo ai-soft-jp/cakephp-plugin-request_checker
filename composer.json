@@ -5,23 +5,31 @@
     "type": "cakephp-plugin",
     "license": "proprietary",
     "require": {
-        "php": ">=7.3.0",
-        "cakephp/chronos": "*",
+        "php": ">=7.2.0",
+        "ext-mbstring": "*",
+        "cakephp/chronos": "^2.0, >=2.0.5",
         "cakephp/event": "^4.0",
         "cakephp/http": "^4.0"
     },
     "require-dev": {
-        "cakephp/cakephp-codesniffer": "*"
+        "cakephp/cakephp-codesniffer": "*",
+        "phpunit/phpunit": "^8.0"
     },
     "autoload": {
         "psr-4": {
             "RequestChecker\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "RequestChecker\\Test\\": "tests"
+        }
+    },
     "scripts": {
-        "check": ["@cs-check"],
-        "cs-check": "phpcs --colors -p src/",
-        "cs-fix": "phpcbf --colors -p src/"
+        "check": ["@cs-check", "@test"],
+        "test": "phpunit",
+        "cs-check": "phpcs --colors -p src/ tests/",
+        "cs-fix": "phpcbf --colors -p src/ tests/"
     },
     "config": {
         "sort-packages": true

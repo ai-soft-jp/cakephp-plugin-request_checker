@@ -4,266 +4,368 @@ declare(strict_types=1);
 namespace RequestChecker;
 
 use Cake\Chronos\Date;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Exception;
 use RequestChecker\Exception\RequestCheckException;
 
+const INT32_MIN = -2147483648;
+const INT32_MAX = 2147483647;
+
 trait RequestCheckerTrait
 {
     /**
-     * Default range for _checkIntValue
-     */
-    protected $_checkIntDefaultRange = [2147483647, -2147483648];
-
-    /**
-     * Check integer value
+     * Check integer value.
      *
-     * @param string $value Integer value
-     * @param int $code HTTP code
-     * @param array|null|false $range [min, max]
+     * Valid option keys are:
+     *
+     * - `min`: Allowed minimum value. Null means unlimited. Defaults to INT32_MIN.
+     * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param string $value Integer value.
+     * @param array $options Options.
      * @return int|null
      */
-    protected function _checkIntValue(string $value, int $code = 404, $range = null): ?int
+    protected function _checkIntValue(string $value, array $options = []): ?int
     {
         $intValue = (int)$value;
         if ((string)$intValue !== $value) {
-            throw new RequestCheckException("Invalid integer value: {$value}", $code);
+            throw new RequestCheckException("Invalid integer value: {$value}", $options['code'] ?? null);
         }
-        if ($range === null) {
-            $range = $this->_checkIntDefaultRange;
-        }
-        if ($range !== false && ($intValue > $range[0] || $intValue < $range[1])) {
-            throw new RequestCheckException("Invalid integer value: {$value}", $code);
+        $options += ['min' => INT32_MIN, 'max' => INT32_MAX];
+        if (
+            (isset($options['min']) && $intValue < $options['min']) ||
+            (isset($options['max']) && $intValue > $options['max'])
+        ) {
+            throw new RequestCheckException("Integer value out of range: {$value}", $options['code'] ?? null);
         }
         return $intValue;
     }
 
     /**
-     * Check string value
+     * Check string value.
      *
-     * @param mixed $value String value
-     * @param string|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value String value.
+     * @param array $options Options.
      * @return string|null
+     * @throws \RequestChceker\Exception\RequestCheckException
      */
-    protected function _checkString($value, $default = false, int $code = 404): ?string
+    protected function _checkStringValue($value, array $options = []): ?string
     {
-        if ($value === null && $default !== false) {
-            return $default;
+        $allowEmpty = array_key_exists('default', $options);
+        if ($value === null && $allowEmpty) {
+            return null;
         }
         if (!is_string($value)) {
-            throw new RequestCheckException("Invalid string value", $code);
+            throw new RequestCheckException('Invalid string value', $options['code'] ?? null);
         }
         if (trim($value) === '') {
-            if ($default === false) {
-                throw new RequestCheckException("Invalid empty value", $code);
-            } else {
-                $value = $default;
+            if (!$allowEmpty) {
+                throw new RequestCheckException('Invalid empty value', $options['code'] ?? null);
             }
+            return null;
         }
         return $value;
     }
 
     /**
-     * Check string value with regex
+     * Check string.
      *
-     * @param mixed $value String value
-     * @param string $regex Regular expression
-     * @param string|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value String value.
+     * @param array $options Options.
      * @return string|null
      */
-    protected function _checkStringRegex($value, string $regex, $default = false, int $code = 404): ?string
+    protected function _checkString($value, array $options = []): ?string
     {
-        $value = $this->_checkString($value, $default, $code);
-        if ($value === $default) {
-            return $default;
+        $value = $this->_checkStringValue($value, $options);
+        return $value ?? $options['default'] ?? null;
+    }
+
+    /**
+     * Check string with regex.
+     *
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value String value.
+     * @param string $regex Regular expression.
+     * @param array $options Options.
+     * @return string|null
+     */
+    protected function _checkStringRegex($value, string $regex, array $options = []): ?string
+    {
+        $value = $this->_checkStringValue($value, $options);
+        if ($value === null) {
+            return $options['default'] ?? null;
         }
         if (!preg_match($regex, $value)) {
-            throw new RequestCheckException("Invalid string value: {$value}", $code);
+            throw new RequestCheckException("Invalid string value: {$value}", $options['code'] ?? null);
         }
         return $value;
     }
 
     /**
-     * Check integer value
+     * Check integer.
      *
-     * @param mixed $value Integer value
-     * @param int|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `min`: Allowed minimum value. Null means unlimited. Defaults to INT32_MIN.
+     * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value Integer value.
+     * @param array $options Options.
      * @return int|null
      */
-    protected function _checkInt($value, $default = false, int $code = 404): ?int
+    protected function _checkInt($value, array $options = []): ?int
     {
-        $value = $this->_checkString($value, $default, $code);
-        if ($value === $default) {
-            return $default;
+        $value = $this->_checkStringValue($value, $options);
+        if ($value === null) {
+            return $options['default'] ?? null;
         }
-        return $this->_checkIntValue($value, $code);
+        return $this->_checkIntValue($value, $options);
     }
 
     /**
-     * Check integer value (64-bit)
+     * Check float.
      *
-     * @param mixed $value Integer value
-     * @param int|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
-     * @return int|null
-     */
-    protected function _checkInt64($value, $default = false, int $code = 404): ?int
-    {
-        $value = $this->_checkString($value, $default, $code);
-        if ($value === $default) {
-            return $default;
-        }
-        return $this->_checkIntValue($value, $code, false);
-    }
-
-    /**
-     * Check float value
+     * Valid option keys are:
      *
-     * @param mixed $value Float value
-     * @param float|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * - `default`: Default value. Throws exception if not exists.
+     * - `min`: Allowed minimum value. Defaults to unlimited.
+     * - `max`: Allowed maximum value. Defaults to unlimited.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value Float value.
+     * @param array $options Options.
      * @return float|null
      */
-    protected function _checkFloat($value, $default = false, int $code = 404): ?float
+    protected function _checkFloat($value, array $options = []): ?float
     {
-        $value = $this->_checkString($value, $default, $code);
-        if ($value === $default) {
-            return $default;
+        $value = $this->_checkStringValue($value, $options);
+        if ($value === null) {
+            return $options['default'] ?? null;
         }
         if (!is_numeric($value)) {
-            throw new RequestCheckException("Invalid float value: {$value}", $code);
+            throw new RequestCheckException("Invalid float value: {$value}", $options['code'] ?? null);
         }
-        return (float)$value;
+        $value = (float)$value;
+        if (
+            (isset($options['min']) && $value < $options['min']) ||
+            (isset($options['max']) && $value > $options['max'])
+        ) {
+            throw new RequestCheckException("Float value out of range: {$value}", $options['code'] ?? null);
+        }
+        return $value;
     }
 
     /**
-     * Check date value
+     * Check date.
      *
-     * @param mixed $value Date value
-     * @param \DateTimeInterface|null|false $default Default value (false = throw)
-     * @param string|array|null $formats Assumed formats
-     * @param int $code HTTP code
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `formats`: Allowed foramts.
+     * - `min`: Allowed minimum date. Defaults to unlimited.
+     * - `max`: Allowed maximum date. Defaults to unlimited.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value Date value.
+     * @param array $options Options.
      * @return \Cake\Chronos\Date|null
      */
-    protected function _checkDate($value, $default = false, $formats = null, int $code = 404): ?Date
+    protected function _checkDate($value, array $options = []): ?Date
     {
+        if ($value instanceof Date) {
+            return $value;
+        }
         if ($value instanceof DateTimeInterface) {
             return Date::instance($value);
         }
-        if ($default && !($default instanceof Date)) {
-            $default = Date::instance($default);
+
+        $value = $this->_checkStringValue($value, $options);
+        if ($value === null) {
+            return $options['default'] ?? null;
         }
 
-        $value = $this->_checkString($value, $default, $code);
-        if ($value === $default) {
-            return $default;
-        }
-
-        if ($formats === null && ctype_digit($value)) {
-            $formats = ['%Y%m%d'];
-        }
-        if ($formats === null) {
+        if (!isset($options['formats'])) {
             try {
                 $date = Date::parse($value);
             } catch (Exception $e) {
-                throw new RequestCheckException("Invalid date value: {$value}", $code, $e);
+                throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null, $e);
             }
         } else {
-            $p = false;
-            foreach ((array)$formats as $format) {
-                $p = strptime($value, $format);
-                if ($p !== false) {
+            $date = null;
+            foreach ((array)$options['formats'] as $format) {
+                $date = DateTimeImmutable::createFromFormat($format, $value);
+                if ($date !== false) {
                     break;
                 }
             }
-            $date = null;
-            if ($p !== false) {
-                $year = $p['tm_year'] + 1900;
-                $month = $p['tm_mon'] + 1;
-                $mday = $p['tm_mday'];
-                if (checkdate($month, $mday, $year)) {
-                    $date = Date::create($year, $month, $mday);
-                }
+            if (!$date) {
+                throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null);
             }
-            if ($date === null) {
-                throw new RequestCheckException("Invalid date value: {$value}", $code);
-            }
+            $date = Date::instance($date);
+        }
+        if (
+            (isset($options['min']) && $date < $options['min']) ||
+            (isset($options['max']) && $date > $options['max'])
+        ) {
+            throw new RequestCheckException("Date value out of range: {$value}", $options['code'] ?? null);
         }
 
         return $date;
     }
 
     /**
-     * Check array
+     * Check array.
      *
-     * @param mixed $value Array
-     * @param array|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `minElements`: Minimum number of elements. Defaults to unlimited.
+     * - `maxElements`: Maximum number of elements. Defaults to unlimited.
+     * - `validator`: Callable to validate each element.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value Array.
+     * @param array $options Options.
      * @return array|null
      */
-    protected function _checkArray($value, $default = false, int $code = 404): ?array
+    protected function _checkArray($value, array $options = []): ?array
     {
-        if ($value === null || $value === '' || $value === []) {
-            if ($default === false) {
-                throw new RequestCheckException("Invalid empty array", $code);
-            } else {
-                return $default;
+        $allowEmpty = array_key_exists('default', $options);
+        if ($value === null || $value === '' || $value === [] || $value === ['']) {
+            if (!$allowEmpty) {
+                throw new RequestCheckException('Invalid empty array', $options['code'] ?? null);
             }
+            return $options['default'] ?? null;
         }
         if (!is_array($value)) {
-            throw new RequestCheckException("Invalid array value", $code);
+            throw new RequestCheckException('Invalid array value', $options['code'] ?? null);
+        }
+        $count = count($value);
+        if (
+            (isset($options['minElements']) && $count < $options['minElements']) ||
+            (isset($options['maxElements']) && $count > $options['maxElements'])
+        ) {
+            throw new RequestCheckException('Array size out of range', $options['code'] ?? null);
+        }
+        if (isset($options['validator'])) {
+            $validator = $options['validator'];
+            array_walk($value, function (&$elem, $key) use ($validator, $options) {
+                if (!$validator($elem, $key)) {
+                    throw new RequestCheckException('Invalid array element', $options['code'] ?? null);
+                }
+            });
         }
         return $value;
     }
 
     /**
-     * Check string array
+     * Merge validator callable.
      *
-     * @param mixed $value String array
-     * @param array|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * @param array &$options Options.
+     * @param callable $validator Primary validator callable.
+     * @return void
+     */
+    private function _checkMergeValidator(array &$options, callable $validator): void
+    {
+        if (isset($options['validator'])) {
+            $prevValidator = $options['validator'];
+            $options['validator'] = function (&$elem, $key) use ($validator, $prevValidator) {
+                return $validator($elem, $key) && $prevValidator($elem, $key);
+            };
+        } else {
+            $options['validator'] = $validator;
+        }
+    }
+
+    /**
+     * Check string array.
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `allowEmpty`: Allows empty element or not. Defaults to false.
+     * - `minElements`: Minimum number of elements. Defaults to unlimited.
+     * - `maxElements`: Maximum number of elements. Defaults to unlimited.
+     * - `regex`: Regular expression to validate element.
+     * - `validator`: Callable to validate each element.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value String array.
+     * @param array $options Options.
      * @return array|null
      */
-    protected function _checkStringArray($value, $default = false, int $code = 404): ?array
+    protected function _checkStringArray($value, array $options = []): ?array
     {
-        $value = $this->_checkArray($value, $default, $code);
-        if ($value === $default) {
-            return $default;
+        $allowEmpty = $options['allowEmpty'] ?? false;
+        $regex = $options['regex'] ?? null;
+        if ($allowEmpty) {
+            if ($regex) {
+                $validator = function ($elem) use ($regex) {
+                    return is_string($elem) && ($elem === '' || preg_match($regex, $elem));
+                };
+            } else {
+                $validator = function ($elem) {
+                    return is_string($elem);
+                };
+            }
+        } else {
+            if ($regex) {
+                $validator = function ($elem) use ($regex) {
+                    return is_string($elem) && trim($elem) !== '' && preg_match($regex, $elem);
+                };
+            } else {
+                $validator = function ($elem) {
+                    return is_string($elem) && trim($elem) !== '';
+                };
+            }
         }
-        array_walk($value, function ($elem) use ($default, $code) {
-            if (!is_string($elem)) {
-                throw new RequestCheckException("Invalid array element", $code);
-            }
-            if ($default !== false && $elem === '') {
-                throw new RequestCheckException("Invalid blank element", $code);
-            }
-        });
-        return $value;
+        $this->_checkMergeValidator($options, $validator);
+        $value = $this->_checkArray($value, $options);
+        return $value ?? $options['default'] ?? null;
     }
 
     /**
      * Check integer array
      *
-     * @param mixed $value Integer array
-     * @param array|null|false $default Default value (false = throw)
-     * @param int $code HTTP code
+     * - `default`: Default value. Throws exception if not exists.
+     * - `min`: Allowed minimum value. Null means unlimited. Defaults to INT32_MIN.
+     * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
+     * - `minElements`: Minimum number of elements. Defaults to unlimited.
+     * - `maxElements`: Maximum number of elements. Defaults to unlimited.
+     * - `validator`: Callable to validate each element.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value Integer array.
+     * @param array $options Options.
      * @return array|null
      */
-    protected function _checkIntArray($value, $default = false, int $code = 404): ?array
+    protected function _checkIntArray($value, array $options = []): ?array
     {
-        $value = $this->_checkArray($value, $default, $code);
-        if ($value === $default) {
-            return $default;
-        }
-        array_walk($value, function (&$elem) use ($code) {
+        $validator = function (&$elem) use ($options) {
             if (!is_string($elem)) {
-                throw new RequestCheckException("Invalid array element", $code);
+                return false;
             }
-            $elem = $this->_checkIntValue($elem, $code);
-        });
-        return $value;
+            $elem = $this->_checkIntValue($elem, $options);
+            return true;
+        };
+        $this->_checkMergeValidator($options, $validator);
+        $value = $this->_checkArray($value, $options);
+        return $value ?? $options['default'] ?? null;
     }
 }

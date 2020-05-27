@@ -5,7 +5,7 @@
     <file>./config</file>
     <file>./src</file>
     <file>./templates</file>
-    <!-- <file>./tests</file> -->
+    <file>./tests</file>
 
     <arg name="extensions" value="php" />
     <arg name="report" value="full" />
@@ -51,5 +51,12 @@
 
     <rule ref="CakePHP.Formatting.BlankLineBeforeReturn">
         <severity>0</severity>
+    </rule>
+
+    <rule ref="Squiz.Functions.MultiLineFunctionDeclaration.ContentAfterBrace">
+        <exclude-pattern>./tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore">
+        <exclude-pattern>./tests/*</exclude-pattern>
     </rule>
 </ruleset>

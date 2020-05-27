@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace RequestChecker\Exception;
 
 use Cake\Http\Exception\HttpException;
+use Throwable;
 
 class RequestCheckException extends HttpException
 {

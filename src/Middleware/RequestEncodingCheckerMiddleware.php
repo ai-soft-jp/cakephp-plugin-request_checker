@@ -24,7 +24,7 @@ class RequestEncodingCheckerMiddleware implements MiddlewareInterface
         try {
             $this->checkEncoding(
                 rawurldecode($request->getUri()->getPath()),
-                $request->getData(),
+                $request->getParsedBody(),
                 $request->getQueryParams(),
                 $request->getAttribute('params'),
                 $request->getCookieParams(),
