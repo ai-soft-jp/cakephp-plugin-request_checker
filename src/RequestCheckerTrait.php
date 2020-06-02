@@ -194,13 +194,11 @@ trait RequestCheckerTrait
         if ($formats !== null && empty($formats)) {
             throw new InvalidArgumentException('formats must not be empty.');
         }
-        if ($formats === null) {
-            if ($value instanceof $class) {
-                return $value;
-            }
-            if ($value instanceof DateTimeInterface) {
-                return $class::instance($value);
-            }
+        if ($value instanceof $class) {
+            return $value;
+        }
+        if ($value instanceof DateTimeInterface) {
+            return $class::instance($value);
         }
 
         $value = $this->_checkStringValue($value, $options);

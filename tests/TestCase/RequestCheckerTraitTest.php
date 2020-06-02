@@ -350,7 +350,7 @@ class RequestCheckerTraitTest extends TestCase
         $this->assertSame($date, $this->_checkDate(null, ['default' => $date]));
         $this->assertSame($date, $this->_checkDate('', ['default' => $date]));
         $this->assertSame($date, $this->_checkDate(' ', ['default' => $date]));
-        $this->assertSame($date, $this->_checkDate($date));
+        $this->assertEquals($date, $this->_checkDate($date));
         $this->assertEquals($date, $this->_checkDate(new DateTime('2020-01-02 01:01:01')));
         $this->assertEquals($date, $this->_checkDate(new DateTimeImmutable('2020-01-02 01:01:01')));
         $this->assertEquals($date, $this->_checkDate(Chronos::parse('2020-01-02 01:01:01')));
@@ -372,6 +372,8 @@ class RequestCheckerTraitTest extends TestCase
             ['2020-01-02', ['min' => Date::create(2020, 1, 1)]],
             ['2020-01-02', ['max' => Date::create(2020, 1, 2)]],
             ['2020-01-02', ['max' => Date::create(2020, 1, 3)]],
+            [Date::create(2020, 1, 2), ['formats' => 'Ymd']],
+            [new DateTime('2020-01-02 01:01:01'), ['formats' => ['Y']]],
         ];
     }
 
@@ -435,12 +437,6 @@ class RequestCheckerTraitTest extends TestCase
         $this->expectException(RequestCheckException::class);
         $this->expectExceptionCode(400);
         $this->_checkDate(null, ['code' => 400]);
-    }
-
-    public function testCheckDateObjectWithFormats()
-    {
-        $this->expectException(RequestCheckException::class);
-        $this->_checkDate(Date::today(), ['formats' => 'Y-m-d']);
     }
 
     public function testCheckDateEmptyStringFormats()
