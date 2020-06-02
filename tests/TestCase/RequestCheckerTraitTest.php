@@ -5,17 +5,25 @@ namespace RequestChecker\Test\TestCase;
 
 use Cake\Chronos\Chronos;
 use Cake\Chronos\Date;
+use Cake\I18n\FrozenDate;
 use DateTime;
 use DateTimeImmutable;
+use InvalidArgumentException;
 use Laminas\Diactoros\StreamFactory;
 use Laminas\Diactoros\UploadedFileFactory;
 use PHPUnit\Framework\TestCase;
+use RequestChecker;
 use RequestChecker\Exception\RequestCheckException;
 use RequestChecker\RequestCheckerTrait;
 
 class RequestCheckerTraitTest extends TestCase
 {
     use RequestCheckerTrait;
+
+    public function tearDown(): void
+    {
+        RequestChecker\setDateClass('chronos');
+    }
 
     private function _createUploadedFile()
     {
@@ -359,7 +367,7 @@ class RequestCheckerTraitTest extends TestCase
             ['2020/01/02', ['formats' => ['Ymd', 'Y/m/d']]],
             ['01/02/2020', ['formats' => 'm/d/Y']],
             ['02/01/2020', ['formats' => 'd/m/Y']],
-            ['Jan  2 2020', ['formats' => 'M j Y']],
+            ['Jan 2 2020', ['formats' => 'M j Y']],
             ['2020-01-02', ['min' => Date::create(2020, 1, 2)]],
             ['2020-01-02', ['min' => Date::create(2020, 1, 1)]],
             ['2020-01-02', ['max' => Date::create(2020, 1, 2)]],
@@ -403,6 +411,8 @@ class RequestCheckerTraitTest extends TestCase
         $date = Date::create(2020, 1, 1);
         return [
             ['2020/01/02', ['formats' => ['Y-m-d', 'Ymd']]],
+            ['2020/01/32', ['formats' => 'Y/m/d']],
+            ['2020/00/01', ['formats' => 'Y/m/d']],
             ['2019/Feb/01', ['formats' => 'Y/m/d']],
             [['foo' => '2020-01-01'], ['formats' => 'Y-m-d']],
             ['2000-01-01', ['min' => $date]],
@@ -425,6 +435,30 @@ class RequestCheckerTraitTest extends TestCase
         $this->expectException(RequestCheckException::class);
         $this->expectExceptionCode(400);
         $this->_checkDate(null, ['code' => 400]);
+    }
+
+    public function testCheckDateObjectWithFormats()
+    {
+        $this->expectException(RequestCheckException::class);
+        $this->_checkDate(Date::today(), ['formats' => 'Y-m-d']);
+    }
+
+    public function testCheckDateEmptyStringFormats()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->_checkDate(null, ['formats' => '']);
+    }
+
+    public function testCheckDateEmptyArrayFormats()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->_checkDate(null, ['formats' => []]);
+    }
+
+    public function testCheckDateWithClass()
+    {
+        RequestChecker\setDateClass('cakephp');
+        $this->assertInstanceOf(FrozenDate::class, $this->_checkDate('today'));
     }
 
     public function testCheckArrayValid()

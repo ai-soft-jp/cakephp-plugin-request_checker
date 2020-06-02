@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace RequestChecker;
 
-use Cake\Chronos\Date;
+use Cake\Chronos\ChronosInterface;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Exception;
+use InvalidArgumentException;
 use RequestChecker\Exception\RequestCheckException;
-
-const INT32_MIN = -2147483648;
-const INT32_MAX = 2147483647;
 
 trait RequestCheckerTrait
 {
@@ -33,7 +31,7 @@ trait RequestCheckerTrait
         if ((string)$intValue !== $value) {
             throw new RequestCheckException("Invalid integer value: {$value}", $options['code'] ?? null);
         }
-        $options += ['min' => INT32_MIN, 'max' => INT32_MAX];
+        $options += Config::DEFAULT_INT_OPTIONS;
         if (
             (isset($options['min']) && $intValue < $options['min']) ||
             (isset($options['max']) && $intValue > $options['max'])
@@ -186,15 +184,23 @@ trait RequestCheckerTrait
      *
      * @param mixed $value Date value.
      * @param array $options Options.
-     * @return \Cake\Chronos\Date|null
+     * @return \Cake\Chronos\ChronosInterface|null
      */
-    protected function _checkDate($value, array $options = []): ?Date
+    protected function _checkDate($value, array $options = []): ?ChronosInterface
     {
-        if ($value instanceof Date) {
-            return $value;
+        $class = Config::getDateClass();
+        $formats = $options['formats'] ?? null;
+
+        if ($formats !== null && empty($formats)) {
+            throw new InvalidArgumentException('formats must not be empty.');
         }
-        if ($value instanceof DateTimeInterface) {
-            return Date::instance($value);
+        if ($formats === null) {
+            if ($value instanceof $class) {
+                return $value;
+            }
+            if ($value instanceof DateTimeInterface) {
+                return $class::instance($value);
+            }
         }
 
         $value = $this->_checkStringValue($value, $options);
@@ -202,24 +208,25 @@ trait RequestCheckerTrait
             return $options['default'] ?? null;
         }
 
-        if (!isset($options['formats'])) {
+        if ($formats === null) {
             try {
-                $date = Date::parse($value);
+                $date = $class::parse($value);
             } catch (Exception $e) {
                 throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null, $e);
             }
         } else {
-            $date = null;
-            foreach ((array)$options['formats'] as $format) {
+            $found = false;
+            foreach ((array)$formats as $format) {
                 $date = DateTimeImmutable::createFromFormat($format, $value);
-                if ($date !== false) {
+                if ($date !== false && $date->format($format) === $value) {
+                    $found = true;
                     break;
                 }
             }
-            if (!$date) {
+            if (!$found) {
                 throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null);
             }
-            $date = Date::instance($date);
+            $date = $class::instance($date);
         }
         if (
             (isset($options['min']) && $date < $options['min']) ||
