@@ -4,11 +4,6 @@ declare(strict_types=1);
 namespace RequestChecker;
 
 use Cake\Chronos\ChronosInterface;
-use DateTimeImmutable;
-use DateTimeInterface;
-use Exception;
-use InvalidArgumentException;
-use RequestChecker\Exception\RequestCheckException;
 
 trait RequestCheckerTrait
 {
@@ -27,18 +22,7 @@ trait RequestCheckerTrait
      */
     protected function _checkIntValue(string $value, array $options = []): ?int
     {
-        $intValue = (int)$value;
-        if ((string)$intValue !== $value) {
-            throw new RequestCheckException("Invalid integer value: {$value}", $options['code'] ?? null);
-        }
-        $options += Config::DEFAULT_INT_OPTIONS;
-        if (
-            (isset($options['min']) && $intValue < $options['min']) ||
-            (isset($options['max']) && $intValue > $options['max'])
-        ) {
-            throw new RequestCheckException("Integer value out of range: {$value}", $options['code'] ?? null);
-        }
-        return $intValue;
+        return RequestChecker::checkIntValue($value, $options);
     }
 
     /**
@@ -52,24 +36,10 @@ trait RequestCheckerTrait
      * @param mixed $value String value.
      * @param array $options Options.
      * @return string|null
-     * @throws \RequestChceker\Exception\RequestCheckException
      */
     protected function _checkStringValue($value, array $options = []): ?string
     {
-        $allowEmpty = array_key_exists('default', $options);
-        if ($value === null && $allowEmpty) {
-            return null;
-        }
-        if (!is_string($value)) {
-            throw new RequestCheckException('Invalid string value', $options['code'] ?? null);
-        }
-        if (trim($value) === '') {
-            if (!$allowEmpty) {
-                throw new RequestCheckException('Invalid empty value', $options['code'] ?? null);
-            }
-            return null;
-        }
-        return $value;
+        return RequestChecker::checkStringValue($value, $options);
     }
 
     /**
@@ -86,8 +56,7 @@ trait RequestCheckerTrait
      */
     protected function _checkString($value, array $options = []): ?string
     {
-        $value = $this->_checkStringValue($value, $options);
-        return $value ?? $options['default'] ?? null;
+        return RequestChecker::checkString($value, $options);
     }
 
     /**
@@ -105,14 +74,7 @@ trait RequestCheckerTrait
      */
     protected function _checkStringRegex($value, string $regex, array $options = []): ?string
     {
-        $value = $this->_checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
-        }
-        if (!preg_match($regex, $value)) {
-            throw new RequestCheckException("Invalid string value: {$value}", $options['code'] ?? null);
-        }
-        return $value;
+        return RequestChecker::checkStringRegex($value, $regex, $options);
     }
 
     /**
@@ -131,11 +93,7 @@ trait RequestCheckerTrait
      */
     protected function _checkInt($value, array $options = []): ?int
     {
-        $value = $this->_checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
-        }
-        return $this->_checkIntValue($value, $options);
+        return RequestChecker::checkInt($value, $options);
     }
 
     /**
@@ -154,21 +112,7 @@ trait RequestCheckerTrait
      */
     protected function _checkFloat($value, array $options = []): ?float
     {
-        $value = $this->_checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
-        }
-        if (!is_numeric($value)) {
-            throw new RequestCheckException("Invalid float value: {$value}", $options['code'] ?? null);
-        }
-        $value = (float)$value;
-        if (
-            (isset($options['min']) && $value < $options['min']) ||
-            (isset($options['max']) && $value > $options['max'])
-        ) {
-            throw new RequestCheckException("Float value out of range: {$value}", $options['code'] ?? null);
-        }
-        return $value;
+        return RequestChecker::checkFloat($value, $options);
     }
 
     /**
@@ -188,52 +132,7 @@ trait RequestCheckerTrait
      */
     protected function _checkDate($value, array $options = []): ?ChronosInterface
     {
-        $class = Config::getDateClass();
-        $formats = $options['formats'] ?? null;
-
-        if ($formats !== null && empty($formats)) {
-            throw new InvalidArgumentException('formats must not be empty.');
-        }
-        if ($value instanceof $class) {
-            return $value;
-        }
-        if ($value instanceof DateTimeInterface) {
-            return $class::instance($value);
-        }
-
-        $value = $this->_checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
-        }
-
-        if ($formats === null) {
-            try {
-                $date = $class::parse($value);
-            } catch (Exception $e) {
-                throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null, $e);
-            }
-        } else {
-            $found = false;
-            foreach ((array)$formats as $format) {
-                $date = DateTimeImmutable::createFromFormat($format, $value);
-                if ($date !== false && $date->format($format) === $value) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                throw new RequestCheckException("Invalid date value: {$value}", $options['code'] ?? null);
-            }
-            $date = $class::instance($date);
-        }
-        if (
-            (isset($options['min']) && $date < $options['min']) ||
-            (isset($options['max']) && $date > $options['max'])
-        ) {
-            throw new RequestCheckException("Date value out of range: {$value}", $options['code'] ?? null);
-        }
-
-        return $date;
+        return RequestChecker::checkDate($value, $options);
     }
 
     /**
@@ -253,51 +152,7 @@ trait RequestCheckerTrait
      */
     protected function _checkArray($value, array $options = []): ?array
     {
-        $allowEmpty = array_key_exists('default', $options);
-        if ($value === null || $value === '' || $value === [] || $value === ['']) {
-            if (!$allowEmpty) {
-                throw new RequestCheckException('Invalid empty array', $options['code'] ?? null);
-            }
-            return $options['default'] ?? null;
-        }
-        if (!is_array($value)) {
-            throw new RequestCheckException('Invalid array value', $options['code'] ?? null);
-        }
-        $count = count($value);
-        if (
-            (isset($options['minElements']) && $count < $options['minElements']) ||
-            (isset($options['maxElements']) && $count > $options['maxElements'])
-        ) {
-            throw new RequestCheckException('Array size out of range', $options['code'] ?? null);
-        }
-        if (isset($options['validator'])) {
-            $validator = $options['validator'];
-            array_walk($value, function (&$elem, $key) use ($validator, $options) {
-                if (!$validator($elem, $key)) {
-                    throw new RequestCheckException('Invalid array element', $options['code'] ?? null);
-                }
-            });
-        }
-        return $value;
-    }
-
-    /**
-     * Merge validator callable.
-     *
-     * @param array &$options Options.
-     * @param callable $validator Primary validator callable.
-     * @return void
-     */
-    private function _checkMergeValidator(array &$options, callable $validator): void
-    {
-        if (isset($options['validator'])) {
-            $prevValidator = $options['validator'];
-            $options['validator'] = function (&$elem, $key) use ($validator, $prevValidator) {
-                return $validator($elem, $key) && $prevValidator($elem, $key);
-            };
-        } else {
-            $options['validator'] = $validator;
-        }
+        return RequestChecker::checkArray($value, $options);
     }
 
     /**
@@ -317,32 +172,7 @@ trait RequestCheckerTrait
      */
     protected function _checkStringArray($value, array $options = []): ?array
     {
-        $allowEmpty = $options['allowEmpty'] ?? false;
-        $regex = $options['regex'] ?? null;
-        if ($allowEmpty) {
-            if ($regex) {
-                $validator = function ($elem) use ($regex) {
-                    return is_string($elem) && ($elem === '' || preg_match($regex, $elem));
-                };
-            } else {
-                $validator = function ($elem) {
-                    return is_string($elem);
-                };
-            }
-        } else {
-            if ($regex) {
-                $validator = function ($elem) use ($regex) {
-                    return is_string($elem) && trim($elem) !== '' && preg_match($regex, $elem);
-                };
-            } else {
-                $validator = function ($elem) {
-                    return is_string($elem) && trim($elem) !== '';
-                };
-            }
-        }
-        $this->_checkMergeValidator($options, $validator);
-        $value = $this->_checkArray($value, $options);
-        return $value ?? $options['default'] ?? null;
+        return RequestChecker::checkStringArray($value, $options);
     }
 
     /**
@@ -362,15 +192,6 @@ trait RequestCheckerTrait
      */
     protected function _checkIntArray($value, array $options = []): ?array
     {
-        $validator = function (&$elem) use ($options) {
-            if (!is_string($elem)) {
-                return false;
-            }
-            $elem = $this->_checkIntValue($elem, $options);
-            return true;
-        };
-        $this->_checkMergeValidator($options, $validator);
-        $value = $this->_checkArray($value, $options);
-        return $value ?? $options['default'] ?? null;
+        return RequestChecker::checkIntArray($value, $options);
     }
 }

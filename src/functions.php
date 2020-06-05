@@ -11,7 +11,7 @@ namespace RequestChecker;
  */
 function setDateClass(string $class): string
 {
-    return Config::setDateClass($class);
+    return RequestChecker::setDateClass($class);
 }
 
 /**
@@ -21,5 +21,5 @@ function setDateClass(string $class): string
  */
 function getDateClass(): string
 {
-    return Config::getDateClass();
+    return RequestChecker::getDateClass();
 }
