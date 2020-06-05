@@ -84,6 +84,9 @@ class RequestChecker
                     $valueStr .= ', ...';
                     break;
                 }
+                if ($i > 0) {
+                    $valueStr .= ', ';
+                }
                 if ($i !== $key) {
                     $valueStr .= "[{$key}] => ";
                 }
