@@ -709,6 +709,7 @@ class RequestCheckerTraitTest extends TestCase
     {
         $this->assertSame([1], $this->_checkIntArray(['1']));
         $this->assertSame([1, 2], $this->_checkIntArray(['1', '2']));
+        $this->assertSame([1, 2], $this->_checkIntArray([1, 2]));
         $this->assertSame([1], $this->_checkIntArray(null, ['default' => [1]]));
         $this->assertSame([2], $this->_checkIntArray('', ['default' => [2]]));
         $this->assertSame([1, 2], $this->_checkIntArray([], ['default' => [1, 2]]));

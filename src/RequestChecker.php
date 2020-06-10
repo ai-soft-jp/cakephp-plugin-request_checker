@@ -514,7 +514,7 @@ class RequestChecker
     public static function checkIntArray($value, array $options = []): ?array
     {
         $validator = function (&$elem) use ($options) {
-            if (!is_string($elem)) {
+            if (!is_string($elem) && !is_int($elem)) {
                 return false;
             }
             $elem = static::checkIntValue($elem, $options);
