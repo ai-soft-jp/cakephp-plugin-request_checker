@@ -16,11 +16,11 @@ trait RequestCheckerTrait
      * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
      * - `code`: Exception code. Defaults to 404.
      *
-     * @param string $value Integer value.
+     * @param mixed $value Integer value.
      * @param array $options Options.
      * @return int|null
      */
-    protected function _checkIntValue(string $value, array $options = []): ?int
+    protected function _checkIntValue($value, array $options = []): ?int
     {
         return RequestChecker::checkIntValue($value, $options);
     }

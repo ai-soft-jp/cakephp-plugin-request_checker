@@ -39,6 +39,8 @@ class RequestCheckerTraitTest extends TestCase
             ['1'],
             ['-2147483648'],
             ['2147483647'],
+            [0],
+            [2147483647],
         ];
     }
 
@@ -61,6 +63,10 @@ class RequestCheckerTraitTest extends TestCase
             ['DeadBeef'],
             ['-2147483649'],
             ['2147483648'],
+            [0.1],
+            [2147483648],
+            [null],
+            [[]],
         ];
     }
 
@@ -89,6 +95,7 @@ class RequestCheckerTraitTest extends TestCase
             ['-9223372036854775808', null, null],
             ['0', 0, null],
             ['1', null, 1],
+            [1, 0, 2],
         ];
     }
 
@@ -109,6 +116,7 @@ class RequestCheckerTraitTest extends TestCase
             ['2', null, 1],
             ['0', 1, 2],
             ['3', 1, 2],
+            [10, 20, 30],
         ];
     }
 
@@ -261,7 +269,9 @@ class RequestCheckerTraitTest extends TestCase
     public function testCheckFloatValid()
     {
         $this->assertSame(0.0, $this->_checkFloat('0'));
+        $this->assertSame(0.0, $this->_checkFloat(0));
         $this->assertSame(1.1, $this->_checkFloat('1.1'));
+        $this->assertSame(1.1, $this->_checkFloat(1.1));
         $this->assertSame(1000000000.0, $this->_checkFloat('1e+9'));
         $this->assertSame(INF, $this->_checkFloat('1e+1000'));
         $this->assertSame(0.0, $this->_checkFloat(null, ['default' => 0.0]));

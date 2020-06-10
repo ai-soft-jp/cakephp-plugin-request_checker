@@ -132,15 +132,21 @@ class RequestChecker
      * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
      * - `code`: Exception code. Defaults to 404.
      *
-     * @param string $value Integer value.
+     * @param mixed $value Integer value.
      * @param array $options Options.
      * @return int|null
      */
-    public static function checkIntValue(string $value, array $options = []): ?int
+    public static function checkIntValue($value, array $options = []): ?int
     {
-        $intValue = (int)$value;
-        if ((string)$intValue !== $value) {
-            static::_throwException('Invalid integer value', $value, $options);
+        if (is_int($value)) {
+            $intValue = $value;
+        } elseif (is_string($value)) {
+            $intValue = (int)$value;
+            if ((string)$intValue !== $value) {
+                static::_throwException('Invalid integer value', $value, $options);
+            }
+        } else {
+            static::_throwException('Invalid string value', $value, $options);
         }
         $options += static::DEFAULT_INT_OPTIONS;
         if (
@@ -242,9 +248,11 @@ class RequestChecker
      */
     public static function checkInt($value, array $options = []): ?int
     {
-        $value = static::checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
+        if (!is_int($value)) {
+            $value = static::checkStringValue($value, $options);
+            if ($value === null) {
+                return $options['default'] ?? null;
+            }
         }
         return static::checkIntValue($value, $options);
     }
@@ -265,14 +273,18 @@ class RequestChecker
      */
     public static function checkFloat($value, array $options = []): ?float
     {
-        $value = static::checkStringValue($value, $options);
-        if ($value === null) {
-            return $options['default'] ?? null;
+        if (is_int($value)) {
+            $value = (float)$value;
+        } elseif (!is_float($value)) {
+            $value = static::checkStringValue($value, $options);
+            if ($value === null) {
+                return $options['default'] ?? null;
+            }
+            if (!is_numeric($value)) {
+                static::_throwException('Invalid float value', $value, $options);
+            }
+            $value = (float)$value;
         }
-        if (!is_numeric($value)) {
-            static::_throwException('Invalid float value', $value, $options);
-        }
-        $value = (float)$value;
         if (
             (isset($options['min']) && $value < $options['min']) ||
             (isset($options['max']) && $value > $options['max'])
