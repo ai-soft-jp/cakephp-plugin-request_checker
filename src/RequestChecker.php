@@ -295,6 +295,34 @@ class RequestChecker
     }
 
     /**
+     * Check JSON
+     *
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `assoc`: Returns association array rather than object. Defaults to true.
+     * - `depth`: Maximum depth. Defaults to 512.
+     * - `options`: json_decode() options. Defaults to nothing.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value JSON value.
+     * @param array $options Options.
+     * @return array|object|null
+     */
+    public static function checkJSON($value, array $options = [])
+    {
+        $value = static::checkStringValue($value, $options);
+        if ($value === null) {
+            return $options['default'] ?? null;
+        }
+        $jsonValue = json_decode($value, $options['assoc'] ?? true, $options['depth'] ?? 512, $options['options'] ?? 0);
+        if ($jsonValue === null && json_last_error() !== JSON_ERROR_NONE) {
+            static::_throwException('Invalid JSON value', $value, $options);
+        }
+        return $jsonValue;
+    }
+
+    /**
      * Check date.
      *
      * Valid option keys are:

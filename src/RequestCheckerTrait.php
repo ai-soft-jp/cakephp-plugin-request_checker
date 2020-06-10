@@ -116,6 +116,26 @@ trait RequestCheckerTrait
     }
 
     /**
+     * Check JSON
+     *
+     * Valid option keys are:
+     *
+     * - `default`: Default value. Throws exception if not exists.
+     * - `assoc`: Returns association array rather than object. Defaults to true.
+     * - `depth`: Maximum depth. Defaults to 512.
+     * - `options`: json_decode() options. Defaults to nothing.
+     * - `code`: Exception code. Defaults to 404.
+     *
+     * @param mixed $value JSON value.
+     * @param array $options Options.
+     * @return array|object|null
+     */
+    protected function _checkJSON($value, array $options = [])
+    {
+        return RequestChecker::checkJSON($value, $options);
+    }
+
+    /**
      * Check date.
      *
      * Valid option keys are:

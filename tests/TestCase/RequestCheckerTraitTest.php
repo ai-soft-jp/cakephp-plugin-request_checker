@@ -350,6 +350,50 @@ class RequestCheckerTraitTest extends TestCase
         $this->_checkFloat(null, ['code' => 400]);
     }
 
+    public function testCheckJSONValue()
+    {
+        $this->assertNull($this->_checkJSON('null', ['default' => 'DeadBeef']));
+        $this->assertSame(false, $this->_checkJSON('false', ['default' => 'DeadBeef']));
+        $this->assertSame(['dead' => 'beef'], $this->_checkJSON('{"dead":"beef"}'));
+        $this->assertObjectHasAttribute('dead', $this->_checkJSON('{"dead":"beef"}', ['assoc' => false]));
+        $this->assertNull($this->_checkJSON(null, ['default' => null]));
+        $this->assertNull($this->_checkJSON('', ['default' => null]));
+        $this->assertNull($this->_checkJSON(' ', ['default' => null]));
+    }
+
+    public function invalidJsonProvider()
+    {
+        return [
+            [null],
+            [''],
+            ['NULL'],
+            ['{dead:"beef"}'],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidJsonProvider
+     */
+    public function testCheckJSONInvalid($value)
+    {
+        $this->expectException(RequestCheckException::class);
+        $this->expectExceptionCode(404);
+        $this->_checkJSON($value);
+    }
+
+    public function testCheckJSONInvalidDepth()
+    {
+        $this->expectException(RequestCheckException::class);
+        $this->expectExceptionCode(404);
+        $this->_checkJSON('[[[[]]]]', ['depth' => 2]);
+    }
+
+    public function testCheckJSONThrowOnError()
+    {
+        $this->expectException('JsonException');
+        $this->_checkJSON('{', ['options' => JSON_THROW_ON_ERROR]);
+    }
+
     public function testCheckDateValid()
     {
         $date = Date::create(2020, 1, 2);
