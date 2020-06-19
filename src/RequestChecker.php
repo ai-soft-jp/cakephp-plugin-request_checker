@@ -396,6 +396,7 @@ class RequestChecker
      * - `minElements`: Minimum number of elements. Defaults to unlimited.
      * - `maxElements`: Maximum number of elements. Defaults to unlimited.
      * - `validator`: Callable to validate each element.
+     * - `converter`: Callable to convert each element.
      * - `code`: Exception code. Defaults to 404.
      *
      * @param mixed $value Array.
@@ -423,43 +424,28 @@ class RequestChecker
         }
         if (isset($options['validator'])) {
             $validator = $options['validator'];
-            array_walk($value, function (&$elem, $key) use ($validator, $options) {
-                if (!$validator($elem, $key)) {
+            foreach ($value as $elem) {
+                if (!$validator($elem)) {
                     static::_throwException('Invalid array element', $elem, $options);
                 }
-            });
+            }
+        }
+        if (isset($options['converter'])) {
+            $value = array_map($options['converter'], $value);
         }
         return $value;
-    }
-
-    /**
-     * Merge validator callable.
-     *
-     * @param array &$options Options.
-     * @param callable $validator Primary validator callable.
-     * @return void
-     */
-    private static function _checkMergeValidator(array &$options, callable $validator): void
-    {
-        if (isset($options['validator'])) {
-            $prevValidator = $options['validator'];
-            $options['validator'] = function (&$elem, $key) use ($validator, $prevValidator) {
-                return $validator($elem, $key) && $prevValidator($elem, $key);
-            };
-        } else {
-            $options['validator'] = $validator;
-        }
     }
 
     /**
      * Check string array.
      *
      * - `default`: Default value. Throws exception if not exists.
-     * - `allowEmpty`: Allows empty element or not. Defaults to false.
      * - `minElements`: Minimum number of elements. Defaults to unlimited.
      * - `maxElements`: Maximum number of elements. Defaults to unlimited.
-     * - `regex`: Regular expression to validate element.
-     * - `validator`: Callable to validate each element.
+     * - `allowEmpty`: Allows empty element or not. Defaults to false.
+     * - `regex`: Regular expression to validate element. `allowEmpty` will be ignored if exists.
+     * - `validator`: Callable to validate each element. `allowEmpty` and `regex` will be ignored if exists.
+     * - `converter`: Callable to convert each element.
      * - `code`: Exception code. Defaults to 404.
      *
      * @param mixed $value String array.
@@ -468,30 +454,22 @@ class RequestChecker
      */
     public static function checkStringArray($value, array $options = []): ?array
     {
-        $allowEmpty = $options['allowEmpty'] ?? false;
-        $regex = $options['regex'] ?? null;
-        if ($allowEmpty) {
-            if ($regex) {
-                $validator = function ($elem) use ($regex) {
-                    return is_string($elem) && ($elem === '' || preg_match($regex, $elem));
+        if (!isset($options['validator'])) {
+            if (isset($options['regex'])) {
+                $regex = $options['regex'];
+                $options['validator'] = function ($elem) use ($regex) {
+                    return is_string($elem) && preg_match($regex, $elem);
                 };
-            } else {
-                $validator = function ($elem) {
+            } elseif ($options['allowEmpty'] ?? false) {
+                $options['validator'] = function ($elem) {
                     return is_string($elem);
                 };
-            }
-        } else {
-            if ($regex) {
-                $validator = function ($elem) use ($regex) {
-                    return is_string($elem) && trim($elem) !== '' && preg_match($regex, $elem);
-                };
             } else {
-                $validator = function ($elem) {
+                $options['validator'] = function ($elem) {
                     return is_string($elem) && trim($elem) !== '';
                 };
             }
         }
-        static::_checkMergeValidator($options, $validator);
         $value = static::checkArray($value, $options);
         return $value ?? $options['default'] ?? null;
     }
@@ -513,14 +491,9 @@ class RequestChecker
      */
     public static function checkIntArray($value, array $options = []): ?array
     {
-        $validator = function (&$elem) use ($options) {
-            if (!is_string($elem) && !is_int($elem)) {
-                return false;
-            }
-            $elem = static::checkIntValue($elem, $options);
-            return true;
+        $options['converter'] = function ($elem) use ($options) {
+            return static::checkIntValue($elem, $options);
         };
-        static::_checkMergeValidator($options, $validator);
         $value = static::checkArray($value, $options);
         return $value ?? $options['default'] ?? null;
     }

@@ -643,8 +643,6 @@ class RequestCheckerTraitTest extends TestCase
         return [
             [['', ''], ['allowEmpty' => true]],
             [['foo', ''], ['allowEmpty' => true]],
-            [['', ''], ['allowEmpty' => true, 'regex' => '/^\w+$/']],
-            [['foo', ''], ['allowEmpty' => true, 'regex' => '/^\w+$/']],
             [['foo'], ['regex' => '/^\w+$/']],
             [['foo', 'bar'], ['regex' => '/^\w+$/']],
             [['100', '200'], ['validator' => function ($v) { return is_numeric($v); }]],
@@ -657,6 +655,11 @@ class RequestCheckerTraitTest extends TestCase
     public function testCheckStringArrayValidOptions($value, $options)
     {
         $this->assertSame($value, $this->_checkStringArray($value, $options));
+    }
+
+    public function testCheckStringArrayConverter()
+    {
+        $this->assertSame(['FOO', 'BAR'], $this->_checkStringArray(['foo', 'bar'], ['converter' => 'strtoupper']));
     }
 
     /**
