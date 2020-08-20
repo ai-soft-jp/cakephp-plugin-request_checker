@@ -535,6 +535,8 @@ class RequestCheckerTraitTest extends TestCase
             [['']],
             ['deadbeef'],
             [$this->_createUploadedFile()],
+            [[['foo', 'bar']]],
+            [[$this->_createUploadedFile()]],
         ];
     }
 
@@ -548,73 +550,44 @@ class RequestCheckerTraitTest extends TestCase
         $this->_checkArray($value);
     }
 
-    public function arrayValidNumElementsProvider()
+    public function arrayValidOptionsProvider()
     {
         return [
-            [['foo'], 1, null],
-            [['foo', 'bar'], null, 2],
+            [['foo'], ['minElements' => 1]],
+            [['foo', 'bar'], ['maxElements' => 2]],
+            [[['foo', 'bar']], ['checkString' => false]],
+            [['foo'], ['validator' => function ($v) { return $v === 'foo'; }]],
+            [['foo', 'bar'], ['validator' => function ($v) { return preg_match('/^\w+$/sD', $v); }]],
         ];
     }
 
     /**
-     * @dataProvider arrayValidNumElementsProvider
+     * @dataProvider arrayValidOptionsProvider
      */
-    public function testCheckArrayValidNumElements($value, $min, $max)
+    public function testCheckArrayValidOptions($value, $options)
     {
-        $this->assertSame($value, $this->_checkArray($value, ['minElements' => $min, 'maxElements' => $max]));
+        $this->assertSame($value, $this->_checkArray($value, $options));
     }
 
-    public function arrayInalidNumElementsProvider()
+    public function arrayInalidOptionsProvider()
     {
         return [
-            [['foo'], 2, null],
-            [['foo', 'bar'], null, 1],
-            [['foo', 'bar', 'baz'], 1, 2],
+            [['foo'], ['minElements' => 2]],
+            [['foo', 'bar'], ['maxElements' => 1]],
+            [['foo', 'bar', 'baz'], ['minElements' => 1, 'maxElements' => 2]],
+            [['fobar'], ['validator' => 'is_numeric']],
+            [['foo', 'bar'], ['validator' => 'ctype_digit']],
         ];
     }
 
     /**
-     * @dataProvider arrayInalidNumElementsProvider
+     * @dataProvider arrayInalidOptionsProvider
      */
-    public function testCheckArrayInvalidNumElements($value, $min, $max)
+    public function testCheckArrayInvalidOptions($value, $options)
     {
         $this->expectException(RequestCheckException::class);
         $this->expectExceptionCode(404);
-        $this->_checkArray($value, ['minElements' => $min, 'maxElements' => $max]);
-    }
-
-    public function arrayValidValidatorProvider()
-    {
-        return [
-            [['foo'], function ($v) { return $v === 'foo'; }],
-            [['foo', 'bar'], function ($v) { return preg_match('/^\w+$/sD', $v); }],
-        ];
-    }
-
-    /**
-     * @dataProvider arrayValidValidatorProvider
-     */
-    public function testCheckArrayValidValidator($value, $validator)
-    {
-        $this->assertSame($value, $this->_checkArray($value, ['validator' => $validator]));
-    }
-
-    public function arrayInalidValidatorProvider()
-    {
-        return [
-            [['fobar'], function ($v) { return is_numeric($v); }],
-            [['foo', 'bar'], function ($v) { return preg_match('/^\d+$/sD', $v); }],
-        ];
-    }
-
-    /**
-     * @dataProvider arrayInalidValidatorProvider
-     */
-    public function testCheckArrayInvalidValidator($value, $validator)
-    {
-        $this->expectException(RequestCheckException::class);
-        $this->expectExceptionCode(404);
-        $this->_checkArray($value, ['validator' => $validator]);
+        $this->_checkArray($value, $options);
     }
 
     public function testCheckArrayInvalidWithCode()
@@ -644,8 +617,10 @@ class RequestCheckerTraitTest extends TestCase
             [['', ''], ['allowEmpty' => true]],
             [['foo', ''], ['allowEmpty' => true]],
             [['foo'], ['regex' => '/^\w+$/']],
+            [['foo', ''], ['allowEmpty' => true, 'regex' => '/^\w+$/']],
             [['foo', 'bar'], ['regex' => '/^\w+$/']],
-            [['100', '200'], ['validator' => function ($v) { return is_numeric($v); }]],
+            [['100', '200'], ['validator' => 'is_numeric']],
+            [['100', '200', ''], ['allowEmpty' => true, 'validator' => 'is_numeric']],
         ];
     }
 
@@ -687,7 +662,7 @@ class RequestCheckerTraitTest extends TestCase
         return [
             [['foo', ''], ['allowEmpty' => true, 'regex' => '/^\d+$/']],
             [['foo', 'bar'], ['regex' => '/^\d+$/']],
-            [['foo', 'bar'], ['validator' => function ($v) { return is_numeric($v); }]],
+            [['foo', 'bar'], ['validator' => 'is_numeric']],
         ];
     }
 
