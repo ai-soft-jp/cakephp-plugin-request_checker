@@ -38,4 +38,10 @@ class RequestCheckExceptionTest extends TestCase
         $exception = new RequestCheckException(null, null, new RuntimeException());
         $this->assertInstanceOf(RuntimeException::class, $exception->getPrevious());
     }
+
+    public function testResponseHeader()
+    {
+        $exception = new RequestCheckException('Dead Beef');
+        $this->assertEquals(['X-RequestChecker' => 'Dead Beef'], $exception->responseHeader());
+    }
 }

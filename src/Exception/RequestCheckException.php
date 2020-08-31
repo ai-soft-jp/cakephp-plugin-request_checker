@@ -26,5 +26,6 @@ class RequestCheckException extends HttpException
             $message = 'Invalid parameter';
         }
         parent::__construct($message, $code, $previous);
+        $this->responseHeader('X-RequestChecker', $message);
     }
 }
