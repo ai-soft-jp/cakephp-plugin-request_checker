@@ -4,15 +4,17 @@ declare(strict_types=1);
 namespace RequestChecker\Test\TestCase\Middleware;
 
 use Laminas\Diactoros\ServerRequestFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use RequestChecker\Middleware\RequestEncodingCheckerMiddleware;
 
 class RequestEncodingCheckerMiddlewareTest extends TestCase
 {
-    /**
-     * @inheritDoc
-     */
+    protected RequestEncodingCheckerMiddleware $middleware;
+    protected ServerRequestFactory $factory;
+    protected DummyHandler $handler;
+
     public function setUp(): void
     {
         $this->middleware = new RequestEncodingCheckerMiddleware();
@@ -32,10 +34,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         $this->assertSame($code, $response->getStatusCode());
     }
 
-    /**
-     * pathProvider
-     */
-    public function pathProvider(): array
+    public static function pathProvider(): array
     {
         return [
             [200, '/'],
@@ -45,10 +44,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         ];
     }
 
-    /**
-     * paramsProvider
-     */
-    public function paramsProvider(): array
+    public static function paramsProvider(): array
     {
         return [
             [200, ['foo' => '寿限無']],
@@ -65,22 +61,14 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         ];
     }
 
-    /**
-     * testProcessPath
-     *
-     * @dataProvider pathProvider
-     */
+    #[DataProvider('pathProvider')]
     public function testProcessPath(int $code, string $path): void
     {
         $request = $this->factory->createServerRequest('GET', $path);
         $this->assertResponse($code, $this->middleware->process($request, $this->handler));
     }
 
-    /**
-     * testProcessBody
-     *
-     * @dataProvider paramsProvider
-     */
+    #[DataProvider('paramsProvider')]
     public function testProcessBody(int $code, array $params): void
     {
         $request = $this->factory->createServerRequest('GET', '/')
@@ -88,11 +76,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         $this->assertResponse($code, $this->middleware->process($request, $this->handler));
     }
 
-    /**
-     * testProcessQuery
-     *
-     * @dataProvider paramsProvider
-     */
+    #[DataProvider('paramsProvider')]
     public function testProcessQuery(int $code, array $params): void
     {
         $request = $this->factory->createServerRequest('GET', '/')
@@ -100,11 +84,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         $this->assertResponse($code, $this->middleware->process($request, $this->handler));
     }
 
-    /**
-     * testProcessParams
-     *
-     * @dataProvider paramsProvider
-     */
+    #[DataProvider('paramsProvider')]
     public function testProcessParams(int $code, array $params): void
     {
         $request = $this->factory->createServerRequest('GET', '/')
@@ -112,11 +92,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         $this->assertResponse($code, $this->middleware->process($request, $this->handler));
     }
 
-    /**
-     * testProcessCookie
-     *
-     * @dataProvider paramsProvider
-     */
+    #[DataProvider('paramsProvider')]
     public function testProcessCookie(int $code, array $params): void
     {
         $request = $this->factory->createServerRequest('GET', '/')
@@ -124,11 +100,7 @@ class RequestEncodingCheckerMiddlewareTest extends TestCase
         $this->assertResponse($code, $this->middleware->process($request, $this->handler));
     }
 
-    /**
-     * testProcessServer
-     *
-     * @dataProvider paramsProvider
-     */
+    #[DataProvider('paramsProvider')]
     public function testProcessServer(int $code, array $params): void
     {
         $request = $this->factory->createServerRequest('GET', '/', $params);

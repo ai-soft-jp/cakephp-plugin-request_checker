@@ -1,28 +1,26 @@
 {
     "name": "ai-soft/cake-request-checker",
-    "description": "RequestChecker for CakePHP",
+    "description": "RequestChecker",
     "keywords": ["cakephp"],
     "type": "cakephp-plugin",
     "license": "proprietary",
     "require": {
-        "php": ">=7.2.0",
+        "php": ">=8.1.0",
         "ext-mbstring": "*",
-        "cakephp/chronos": "^2.0, >=2.0.5",
-        "cakephp/event": "^4.0",
-        "cakephp/http": "^4.0"
+        "cakephp/chronos": "^3.0",
+        "laminas/laminas-diactoros": "^3.0"
     },
     "require-dev": {
-        "cakephp/i18n": "^4.0",
+        "cakephp/i18n": "^5.0",
         "cakephp/cakephp-codesniffer": "*",
-        "phpunit/phpunit": "^8.0"
+        "phake/phake": "*",
+        "phpunit/phpunit": "^10.0",
+        "psr/http-server-middleware": "*"
     },
     "autoload": {
         "psr-4": {
             "RequestChecker\\": "src/"
-        },
-        "files": [
-            "src/functions.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -36,6 +34,9 @@
         "cs-fix": "phpcbf --colors -p src/ tests/"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

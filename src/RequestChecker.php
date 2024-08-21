@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace RequestChecker;
 
-use Cake\Chronos\ChronosInterface;
-use Cake\Chronos\Date;
-use Cake\I18n\FrozenDate;
-use DateTimeImmutable;
+use Cake\Chronos\ChronosDate;
+use Cake\I18n\Date;
 use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
-use ReflectionClass;
 use RequestChecker\Exception\RequestCheckException;
 use Throwable;
 
@@ -20,22 +17,84 @@ class RequestChecker
      * Class name map
      */
     private const CLASS_MAP = [
-        'chronos' => Date::class,
-        'cakephp' => FrozenDate::class,
+        'chronos' => ChronosDate::class,
+        'cakephp' => Date::class,
     ];
 
     /**
-     * Default checkInt options
+     * Default options
      */
-    public const DEFAULT_INT_OPTIONS = [
-        'min' => -2147483648,
-        'max' => 2147483647,
+    private array $_defaultOptions = [
+        'int' => [
+            'min' => -2147483648,
+            'max' => 2147483647,
+        ],
+        'json' => [
+            'assoc' => true,
+            'depth' => 512,
+            'options' => 0,
+        ],
     ];
+
+    /**
+     * Default exception code
+     */
+    private int $_defaultCode = 404;
 
     /**
      * Date class
      */
-    private static $dateClass = Date::class;
+    private string $_dateClass = ChronosDate::class;
+
+    /**
+     * Set default options
+     *
+     * @param string $type Option type
+     * @param array $options Options
+     * @return void
+     */
+    public function setDefaultOptions(string $type, array $options): void
+    {
+        if (!isset($this->_defaultOptions[$type])) {
+            throw new InvalidArgumentException("Unexpected type {$type}.");
+        }
+        $this->_defaultOptions[$type] = $options;
+    }
+
+    /**
+     * Get default options
+     *
+     * @param string $type Option type
+     * @return array
+     */
+    public function getDefaultOptions(string $type): array
+    {
+        if (!isset($this->_defaultOptions[$type])) {
+            throw new InvalidArgumentException("Unexpected type {$type}.");
+        }
+        return $this->_defaultOptions[$type];
+    }
+
+    /**
+     * Set default exception code
+     *
+     * @param int $code Default exception code
+     * @return void
+     */
+    public function setDefaultCode(int $code): void
+    {
+        $this->_defaultCode = $code;
+    }
+
+    /**
+     * Get default exception code
+     *
+     * @return int
+     */
+    public function getDefaultCode(): int
+    {
+        return $this->_defaultCode;
+    }
 
     /**
      * Set class of Date
@@ -43,16 +102,15 @@ class RequestChecker
      * @param string $class Class name
      * @return string
      */
-    public static function setDateClass(string $class): string
+    public function setDateClass(string $class): string
     {
         if (isset(static::CLASS_MAP[$class])) {
             $class = static::CLASS_MAP[$class];
         }
-        $classRef = new ReflectionClass($class);
-        if (!$classRef->implementsInterface(ChronosInterface::class)) {
-            throw new InvalidArgumentException("Class {$class} must implement Cake\\Chronos\\ChronosInterface.");
+        if (!class_exists($class)) {
+            throw new \InvalidArgumentException("Class {$class} does not exist.");
         }
-        static::$dateClass = $class;
+        $this->_dateClass = $class;
         return $class;
     }
 
@@ -61,9 +119,9 @@ class RequestChecker
      *
      * @return string
      */
-    public static function getDateClass(): string
+    public function getDateClass(): string
     {
-        return static::$dateClass;
+        return $this->_dateClass;
     }
 
     /**
@@ -75,7 +133,7 @@ class RequestChecker
      * @param \Throwable|null $prev Previous exception
      * @return void
      */
-    private static function _throwException(string $message, $value, array $options, ?Throwable $prev = null): void
+    private function _throwException(string $message, $value, array $options, ?Throwable $prev = null): void
     {
         if (is_array($value)) {
             $valueStr = '[';
@@ -96,7 +154,8 @@ class RequestChecker
         } else {
             $valueStr = static::_formatValue($value);
         }
-        throw new RequestCheckException("{$message}: {$valueStr}", $options['code'] ?? null, $prev);
+        $code = $options['code'] ?? $this->_defaultCode;
+        throw new RequestCheckException("{$message}: {$valueStr}", $code, $prev);
     }
 
     /**
@@ -105,7 +164,7 @@ class RequestChecker
      * @param mixed $value Value
      * @return string
      */
-    private static function _formatValue($value): string
+    private function _formatValue($value): string
     {
         if ($value === null) {
             return 'null';
@@ -130,25 +189,25 @@ class RequestChecker
      *
      * - `min`: Allowed minimum value. Null means unlimited. Defaults to INT32_MIN.
      * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Integer value.
      * @param array $options Options.
      * @return int|null
      */
-    public static function checkIntValue($value, array $options = []): ?int
+    public function checkIntValue($value, array $options = []): ?int
     {
         if (is_int($value)) {
             $intValue = $value;
         } elseif (is_string($value)) {
             $intValue = (int)$value;
             if ((string)$intValue !== $value) {
-                static::_throwException('Invalid integer value', $value, $options);
+                $this->_throwException('Invalid integer value', $value, $options);
             }
         } else {
-            static::_throwException('Invalid string value', $value, $options);
+            $this->_throwException('Invalid string value', $value, $options);
         }
-        $options += static::DEFAULT_INT_OPTIONS;
+        $options += $this->_defaultOptions['int'];
         if (
             (isset($options['min']) && $intValue < $options['min']) ||
             (isset($options['max']) && $intValue > $options['max'])
@@ -164,25 +223,25 @@ class RequestChecker
      * Valid option keys are:
      *
      * - `default`: Default value. Throws exception if not exists.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value String value.
      * @param array $options Options.
      * @return string|null
      * @throws \RequestChceker\Exception\RequestCheckException
      */
-    public static function checkStringValue($value, array $options = []): ?string
+    public function checkStringValue($value, array $options = []): ?string
     {
         $allowEmpty = array_key_exists('default', $options);
         if ($value === null && $allowEmpty) {
             return null;
         }
         if (!is_string($value)) {
-            static::_throwException('Invalid string value', $value, $options);
+            $this->_throwException('Invalid string value', $value, $options);
         }
         if (trim($value) === '') {
             if (!$allowEmpty) {
-                static::_throwException('Invalid empty value', $value, $options);
+                $this->_throwException('Invalid empty value', $value, $options);
             }
             return null;
         }
@@ -195,15 +254,15 @@ class RequestChecker
      * Valid option keys are:
      *
      * - `default`: Default value. Throws exception if not exists.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value String value.
      * @param array $options Options.
      * @return string|null
      */
-    public static function checkString($value, array $options = []): ?string
+    public function checkString($value, array $options = []): ?string
     {
-        $value = static::checkStringValue($value, $options);
+        $value = $this->checkStringValue($value, $options);
         return $value ?? $options['default'] ?? null;
     }
 
@@ -213,21 +272,21 @@ class RequestChecker
      * Valid option keys are:
      *
      * - `default`: Default value. Throws exception if not exists.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value String value.
      * @param string $regex Regular expression.
      * @param array $options Options.
      * @return string|null
      */
-    public static function checkStringRegex($value, string $regex, array $options = []): ?string
+    public function checkStringRegex($value, string $regex, array $options = []): ?string
     {
-        $value = static::checkStringValue($value, $options);
+        $value = $this->checkStringValue($value, $options);
         if ($value === null) {
             return $options['default'] ?? null;
         }
         if (!preg_match($regex, $value)) {
-            static::_throwException('Invalid string value', $value, $options);
+            $this->_throwException('Invalid string value', $value, $options);
         }
         return $value;
     }
@@ -240,21 +299,21 @@ class RequestChecker
      * - `default`: Default value. Throws exception if not exists.
      * - `min`: Allowed minimum value. Null means unlimited. Defaults to INT32_MIN.
      * - `max`: Allowed maximum value. Null means unlimited. Defaults to INT32_MAX.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Integer value.
      * @param array $options Options.
      * @return int|null
      */
-    public static function checkInt($value, array $options = []): ?int
+    public function checkInt($value, array $options = []): ?int
     {
         if (!is_int($value)) {
-            $value = static::checkStringValue($value, $options);
+            $value = $this->checkStringValue($value, $options);
             if ($value === null) {
                 return $options['default'] ?? null;
             }
         }
-        return static::checkIntValue($value, $options);
+        return $this->checkIntValue($value, $options);
     }
 
     /**
@@ -265,23 +324,23 @@ class RequestChecker
      * - `default`: Default value. Throws exception if not exists.
      * - `min`: Allowed minimum value. Defaults to unlimited.
      * - `max`: Allowed maximum value. Defaults to unlimited.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Float value.
      * @param array $options Options.
      * @return float|null
      */
-    public static function checkFloat($value, array $options = []): ?float
+    public function checkFloat($value, array $options = []): ?float
     {
         if (is_int($value)) {
             $value = (float)$value;
         } elseif (!is_float($value)) {
-            $value = static::checkStringValue($value, $options);
+            $value = $this->checkStringValue($value, $options);
             if ($value === null) {
                 return $options['default'] ?? null;
             }
             if (!is_numeric($value)) {
-                static::_throwException('Invalid float value', $value, $options);
+                $this->_throwException('Invalid float value', $value, $options);
             }
             $value = (float)$value;
         }
@@ -289,7 +348,7 @@ class RequestChecker
             (isset($options['min']) && $value < $options['min']) ||
             (isset($options['max']) && $value > $options['max'])
         ) {
-            static::_throwException('Float value out of range', $value, $options);
+            $this->_throwException('Float value out of range', $value, $options);
         }
         return $value;
     }
@@ -303,21 +362,22 @@ class RequestChecker
      * - `assoc`: Returns association array rather than object. Defaults to true.
      * - `depth`: Maximum depth. Defaults to 512.
      * - `options`: json_decode() options. Defaults to nothing.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value JSON value.
      * @param array $options Options.
      * @return array|object|null
      */
-    public static function checkJSON($value, array $options = [])
+    public function checkJSON($value, array $options = [])
     {
-        $value = static::checkStringValue($value, $options);
+        $value = $this->checkStringValue($value, $options);
         if ($value === null) {
             return $options['default'] ?? null;
         }
-        $jsonValue = json_decode($value, $options['assoc'] ?? true, $options['depth'] ?? 512, $options['options'] ?? 0);
+        $options += $this->_defaultOptions['json'];
+        $jsonValue = json_decode($value, $options['assoc'], $options['depth'], $options['options']);
         if ($jsonValue === null && json_last_error() !== JSON_ERROR_NONE) {
-            static::_throwException('Invalid JSON value', $value, $options);
+            $this->_throwException('Invalid JSON value', $value, $options);
         }
         return $jsonValue;
     }
@@ -331,57 +391,60 @@ class RequestChecker
      * - `formats`: Allowed foramts.
      * - `min`: Allowed minimum date. Defaults to unlimited.
      * - `max`: Allowed maximum date. Defaults to unlimited.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Date value.
      * @param array $options Options.
-     * @return \Cake\Chronos\ChronosInterface|null
+     * @return \Cake\Chronos\ChronosDate|null
      */
-    public static function checkDate($value, array $options = []): ?ChronosInterface
+    public function checkDate($value, array $options = []): ?ChronosDate
     {
-        $class = static::getDateClass();
+        $dateClass = $this->getDateClass();
         $formats = $options['formats'] ?? null;
 
         if ($formats !== null && empty($formats)) {
             throw new InvalidArgumentException('formats must not be empty.');
         }
-        if ($value instanceof $class) {
+        if ($value instanceof $dateClass) {
             return $value;
         }
         if ($value instanceof DateTimeInterface) {
-            return $class::instance($value);
+            return new $dateClass($value);
         }
 
-        $value = static::checkStringValue($value, $options);
+        $value = $this->checkStringValue($value, $options);
         if ($value === null) {
             return $options['default'] ?? null;
         }
 
         if ($formats === null) {
             try {
-                $date = $class::parse($value);
+                $date = new $dateClass($value);
             } catch (Exception $e) {
-                static::_throwException('Invalid date value', $value, $options, $e);
+                $this->_throwException('Invalid date value', $value, $options, $e);
             }
         } else {
             $found = false;
             foreach ((array)$formats as $format) {
-                $date = DateTimeImmutable::createFromFormat($format, $value);
-                if ($date !== false && $date->format($format) === $value) {
-                    $found = true;
-                    break;
+                try {
+                    $date = $dateClass::createFromFormat($format, $value);
+                    if ($date !== false && $date->format($format) === $value) {
+                        $found = true;
+                        break;
+                    }
+                } catch (InvalidArgumentException $e) {
+                    // continue to next format
                 }
             }
             if (!$found) {
                 static::_throwException('Invalid date value', $value, $options);
             }
-            $date = $class::instance($date);
         }
         if (
             (isset($options['min']) && $date < $options['min']) ||
             (isset($options['max']) && $date > $options['max'])
         ) {
-            static::_throwException('Date value out of range', $value, $options);
+            $this->_throwException('Date value out of range', $value, $options);
         }
 
         return $date;
@@ -398,30 +461,30 @@ class RequestChecker
      * - `checkString`: Checks each element is string or not. Defaults to true.
      * - `converter`: Callable to convert each element. Called before validator.
      * - `validator`: Callable to validate each element.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Array.
      * @param array $options Options.
      * @return array|null
      */
-    public static function checkArray($value, array $options = []): ?array
+    public function checkArray($value, array $options = []): ?array
     {
         $allowEmpty = array_key_exists('default', $options);
         if ($value === null || $value === '' || $value === [] || $value === ['']) {
             if (!$allowEmpty) {
-                static::_throwException('Invalid empty array', $value, $options);
+                $this->_throwException('Invalid empty array', $value, $options);
             }
             return $options['default'] ?? null;
         }
         if (!is_array($value)) {
-            static::_throwException('Invalid array value', $value, $options);
+            $this->_throwException('Invalid array value', $value, $options);
         }
         $count = count($value);
         if (
             (isset($options['minElements']) && $count < $options['minElements']) ||
             (isset($options['maxElements']) && $count > $options['maxElements'])
         ) {
-            static::_throwException('Array size out of range', $count, $options);
+            $this->_throwException('Array size out of range', $count, $options);
         }
 
         $checkString = $options['checkString'] ?? true;
@@ -430,13 +493,13 @@ class RequestChecker
         $resultValue = [];
         foreach ($value as $key => $elem) {
             if ($checkString && !is_string($elem)) {
-                static::_throwException('Invalid array element', $elem, $options);
+                $this->_throwException('Invalid array element', $elem, $options);
             }
             if ($converter) {
                 $elem = $converter($elem);
             }
             if ($validator && !$validator($elem)) {
-                static::_throwException('Invalid array element', $elem, $options);
+                $this->_throwException('Invalid array element', $elem, $options);
             }
             $resultValue[$key] = $elem;
         }
@@ -453,13 +516,13 @@ class RequestChecker
      * - `converter`: Callable to convert each element. Called before validator.
      * - `regex`: Regular expression to validate element.
      * - `validator`: Callable to validate each element. `regex` will be ignored if exists.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value String array.
      * @param array $options Options.
      * @return array|null
      */
-    public static function checkStringArray($value, array $options = []): ?array
+    public function checkStringArray($value, array $options = []): ?array
     {
         $options['checkString'] = true;
         $allowEmpty = (bool)($options['allowEmpty'] ?? false);
@@ -479,7 +542,7 @@ class RequestChecker
             }
             return true;
         };
-        $value = static::checkArray($value, $options);
+        $value = $this->checkArray($value, $options);
         return $value ?? $options['default'] ?? null;
     }
 
@@ -492,19 +555,19 @@ class RequestChecker
      * - `minElements`: Minimum number of elements. Defaults to unlimited.
      * - `maxElements`: Maximum number of elements. Defaults to unlimited.
      * - `validator`: Callable to validate each element.
-     * - `code`: Exception code. Defaults to 404.
+     * - `code`: Exception code.
      *
      * @param mixed $value Integer array.
      * @param array $options Options.
      * @return array|null
      */
-    public static function checkIntArray($value, array $options = []): ?array
+    public function checkIntArray($value, array $options = []): ?array
     {
         $options['checkString'] = false;
         $options['converter'] = function ($elem) use ($options) {
-            return static::checkIntValue($elem, $options);
+            return $this->checkIntValue($elem, $options);
         };
-        $value = static::checkArray($value, $options);
+        $value = $this->checkArray($value, $options);
         return $value ?? $options['default'] ?? null;
     }
 }

@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace RequestChecker\Middleware;
 
-use Cake\Http\Response;
 use Exception;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\StreamFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
@@ -31,11 +32,9 @@ class RequestEncodingCheckerMiddleware implements MiddlewareInterface
                 $request->getServerParams()
             );
         } catch (Exception $e) {
-            return new Response([
-                'status' => 400,
-                'type' => 'text/plain',
-                'body' => "400 - Bad Encoding\n",
-            ]);
+            $streamFactory = new StreamFactory();
+            $body = $streamFactory->createStream("400 - Bad Encoding\n");
+            return new Response($body, 400, ['Content-Type' => 'text/plain']);
         }
 
         return $handler->handle($request);
