@@ -16,11 +16,11 @@ trait RequestCheckerTrait
      * Set RequestChecker instance
      *
      * @param \RequestChecker\RequestChecker|null $checker RequestChecker
-     * @return void
+     * @return \RequestChecker\RequestChecker
      */
-    protected function _setRequestChecker(?RequestChecker $checker = null): void
+    protected function setRequestChecker(?RequestChecker $checker = null): RequestChecker
     {
-        $this->_requestChecker = $checker ?? new RequestChecker();
+        return $this->_requestChecker = $checker ?? new RequestChecker();
     }
 
     /**
@@ -28,7 +28,7 @@ trait RequestCheckerTrait
      *
      * @return \RequestChecker\RequestChecker|null
      */
-    protected function _getRequestChecker(): ?RequestChecker
+    protected function getRequestChecker(): ?RequestChecker
     {
         return $this->_requestChecker;
     }

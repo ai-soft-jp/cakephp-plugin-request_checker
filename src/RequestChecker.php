@@ -14,6 +14,11 @@ use Throwable;
 class RequestChecker
 {
     /**
+     * Global default date class
+     */
+    private static string $_defaultDateClass = 'chronos';
+
+    /**
      * Class name map
      */
     private const CLASS_MAP = [
@@ -44,7 +49,26 @@ class RequestChecker
     /**
      * Date class
      */
-    private string $_dateClass = ChronosDate::class;
+    private string $_dateClass;
+
+    public function __construct()
+    {
+        $this->setDateClass(self::$_defaultDateClass);
+    }
+
+    /**
+     * Set the global default date class
+     */
+    public static function setDefaultDateClass(string $dateClass): void {
+        self::$_defaultDateClass = $dateClass;
+    }
+
+    /**
+     * Get the global default date class
+     */
+    public static function getDefaultDateClass(): string {
+        return self::$_defaultDateClass;
+    }
 
     /**
      * Set default options
