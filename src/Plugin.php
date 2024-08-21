@@ -10,17 +10,9 @@ use Cake\Core\BasePlugin;
  */
 class Plugin extends BasePlugin
 {
-    /**
-     * Plugin name.
-     *
-     * @var string
-     */
-    protected $name = 'RequestChecker';
+    /** The name of this plugin */
+    protected ?string $name = 'RequestChecker';
 
-    /**
-     * Don't try to load routes.
-     *
-     * @var bool
-     */
-    protected $routesEnabled = false;
+    /** Don't try to load routes */
+    protected bool $routesEnabled = false;
 }
