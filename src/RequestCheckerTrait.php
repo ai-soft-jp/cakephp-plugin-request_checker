@@ -14,23 +14,18 @@ trait RequestCheckerTrait
 
     /**
      * Set RequestChecker instance
-     *
-     * @param \RequestChecker\RequestChecker|null $checker RequestChecker
-     * @return \RequestChecker\RequestChecker
      */
-    protected function setRequestChecker(?RequestChecker $checker = null): RequestChecker
+    protected function setRequestChecker(RequestChecker $checker = null): void
     {
-        return $this->_requestChecker = $checker ?? new RequestChecker();
+        $this->_requestChecker = $checker;
     }
 
     /**
      * Get RequestChecker instance
-     *
-     * @return \RequestChecker\RequestChecker|null
      */
-    protected function getRequestChecker(): ?RequestChecker
+    protected function getRequestChecker(): RequestChecker
     {
-        return $this->_requestChecker;
+        return $this->_requestChecker ??= RequestChecker::defaultInstance();
     }
 
     /**
@@ -48,7 +43,7 @@ trait RequestCheckerTrait
      */
     protected function _checkIntValue($value, array $options = []): ?int
     {
-        return $this->_requestChecker->checkIntValue($value, $options);
+        return $this->getRequestChecker()->checkIntValue($value, $options);
     }
 
     /**
@@ -65,7 +60,7 @@ trait RequestCheckerTrait
      */
     protected function _checkStringValue($value, array $options = []): ?string
     {
-        return $this->_requestChecker->checkStringValue($value, $options);
+        return $this->getRequestChecker()->checkStringValue($value, $options);
     }
 
     /**
@@ -82,7 +77,7 @@ trait RequestCheckerTrait
      */
     protected function _checkString($value, array $options = []): ?string
     {
-        return $this->_requestChecker->checkString($value, $options);
+        return $this->getRequestChecker()->checkString($value, $options);
     }
 
     /**
@@ -100,7 +95,7 @@ trait RequestCheckerTrait
      */
     protected function _checkStringRegex($value, string $regex, array $options = []): ?string
     {
-        return $this->_requestChecker->checkStringRegex($value, $regex, $options);
+        return $this->getRequestChecker()->checkStringRegex($value, $regex, $options);
     }
 
     /**
@@ -119,7 +114,7 @@ trait RequestCheckerTrait
      */
     protected function _checkInt($value, array $options = []): ?int
     {
-        return $this->_requestChecker->checkInt($value, $options);
+        return $this->getRequestChecker()->checkInt($value, $options);
     }
 
     /**
@@ -138,7 +133,7 @@ trait RequestCheckerTrait
      */
     protected function _checkFloat($value, array $options = []): ?float
     {
-        return $this->_requestChecker->checkFloat($value, $options);
+        return $this->getRequestChecker()->checkFloat($value, $options);
     }
 
     /**
@@ -158,7 +153,7 @@ trait RequestCheckerTrait
      */
     protected function _checkJSON($value, array $options = [])
     {
-        return $this->_requestChecker->checkJSON($value, $options);
+        return $this->getRequestChecker()->checkJSON($value, $options);
     }
 
     /**
@@ -178,7 +173,7 @@ trait RequestCheckerTrait
      */
     protected function _checkDate($value, array $options = []): ?ChronosDate
     {
-        return $this->_requestChecker->checkDate($value, $options);
+        return $this->getRequestChecker()->checkDate($value, $options);
     }
 
     /**
@@ -198,7 +193,7 @@ trait RequestCheckerTrait
      */
     protected function _checkArray($value, array $options = []): ?array
     {
-        return $this->_requestChecker->checkArray($value, $options);
+        return $this->getRequestChecker()->checkArray($value, $options);
     }
 
     /**
@@ -218,7 +213,7 @@ trait RequestCheckerTrait
      */
     protected function _checkStringArray($value, array $options = []): ?array
     {
-        return $this->_requestChecker->checkStringArray($value, $options);
+        return $this->getRequestChecker()->checkStringArray($value, $options);
     }
 
     /**
@@ -238,6 +233,6 @@ trait RequestCheckerTrait
      */
     protected function _checkIntArray($value, array $options = []): ?array
     {
-        return $this->_requestChecker->checkIntArray($value, $options);
+        return $this->getRequestChecker()->checkIntArray($value, $options);
     }
 }

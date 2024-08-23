@@ -19,6 +19,11 @@ class RequestChecker
     private static string $_defaultDateClass = 'chronos';
 
     /**
+     * Global default instance
+     */
+    private static self $_defaultInstance;
+
+    /**
      * Class name map
      */
     private const CLASS_MAP = [
@@ -51,11 +56,6 @@ class RequestChecker
      */
     private string $_dateClass;
 
-    public function __construct()
-    {
-        $this->setDateClass(self::$_defaultDateClass);
-    }
-
     /**
      * Set the global default date class
      */
@@ -68,6 +68,19 @@ class RequestChecker
      */
     public static function getDefaultDateClass(): string {
         return self::$_defaultDateClass;
+    }
+
+    /**
+     * Retrieve the default instance
+     */
+    public static function defaultInstance(): self {
+        self::$_defaultInstance ??= new self();
+        return self::$_defaultInstance;
+    }
+
+    public function __construct()
+    {
+        $this->setDateClass(self::$_defaultDateClass);
     }
 
     /**
