@@ -15,7 +15,7 @@ trait RequestCheckerTrait
     /**
      * Set RequestChecker instance
      */
-    protected function setRequestChecker(RequestChecker $checker = null): void
+    protected function setRequestChecker(?RequestChecker $checker = null): void
     {
         $this->_requestChecker = $checker;
     }
@@ -41,7 +41,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return int|null
      */
-    protected function _checkIntValue($value, array $options = []): ?int
+    protected function _checkIntValue(mixed $value, array $options = []): ?int
     {
         return $this->getRequestChecker()->checkIntValue($value, $options);
     }
@@ -58,7 +58,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return string|null
      */
-    protected function _checkStringValue($value, array $options = []): ?string
+    protected function _checkStringValue(mixed $value, array $options = []): ?string
     {
         return $this->getRequestChecker()->checkStringValue($value, $options);
     }
@@ -75,7 +75,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return string|null
      */
-    protected function _checkString($value, array $options = []): ?string
+    protected function _checkString(mixed $value, array $options = []): ?string
     {
         return $this->getRequestChecker()->checkString($value, $options);
     }
@@ -93,7 +93,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return string|null
      */
-    protected function _checkStringRegex($value, string $regex, array $options = []): ?string
+    protected function _checkStringRegex(mixed $value, string $regex, array $options = []): ?string
     {
         return $this->getRequestChecker()->checkStringRegex($value, $regex, $options);
     }
@@ -112,7 +112,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return int|null
      */
-    protected function _checkInt($value, array $options = []): ?int
+    protected function _checkInt(mixed $value, array $options = []): ?int
     {
         return $this->getRequestChecker()->checkInt($value, $options);
     }
@@ -131,7 +131,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return float|null
      */
-    protected function _checkFloat($value, array $options = []): ?float
+    protected function _checkFloat(mixed $value, array $options = []): ?float
     {
         return $this->getRequestChecker()->checkFloat($value, $options);
     }
@@ -149,9 +149,9 @@ trait RequestCheckerTrait
      *
      * @param mixed $value JSON value.
      * @param array $options Options.
-     * @return array|object|null
+     * @return object|array|null
      */
-    protected function _checkJSON($value, array $options = [])
+    protected function _checkJSON(mixed $value, array $options = []): array|object|null
     {
         return $this->getRequestChecker()->checkJSON($value, $options);
     }
@@ -171,7 +171,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return \Cake\Chronos\ChronosDate|null
      */
-    protected function _checkDate($value, array $options = []): ?ChronosDate
+    protected function _checkDate(mixed $value, array $options = []): ?ChronosDate
     {
         return $this->getRequestChecker()->checkDate($value, $options);
     }
@@ -191,7 +191,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return array|null
      */
-    protected function _checkArray($value, array $options = []): ?array
+    protected function _checkArray(mixed $value, array $options = []): ?array
     {
         return $this->getRequestChecker()->checkArray($value, $options);
     }
@@ -211,7 +211,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return array|null
      */
-    protected function _checkStringArray($value, array $options = []): ?array
+    protected function _checkStringArray(mixed $value, array $options = []): ?array
     {
         return $this->getRequestChecker()->checkStringArray($value, $options);
     }
@@ -231,7 +231,7 @@ trait RequestCheckerTrait
      * @param array $options Options.
      * @return array|null
      */
-    protected function _checkIntArray($value, array $options = []): ?array
+    protected function _checkIntArray(mixed $value, array $options = []): ?array
     {
         return $this->getRequestChecker()->checkIntArray($value, $options);
     }

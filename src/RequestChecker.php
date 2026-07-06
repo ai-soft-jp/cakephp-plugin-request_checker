@@ -59,25 +59,31 @@ class RequestChecker
     /**
      * Set the global default date class
      */
-    public static function setDefaultDateClass(string $dateClass): void {
+    public static function setDefaultDateClass(string $dateClass): void
+    {
         self::$_defaultDateClass = $dateClass;
     }
 
     /**
      * Get the global default date class
      */
-    public static function getDefaultDateClass(): string {
+    public static function getDefaultDateClass(): string
+    {
         return self::$_defaultDateClass;
     }
 
     /**
      * Retrieve the default instance
      */
-    public static function defaultInstance(): self {
+    public static function defaultInstance(): self
+    {
         self::$_defaultInstance ??= new self();
         return self::$_defaultInstance;
     }
 
+    /**
+     * Constructor
+     */
     public function __construct()
     {
         $this->setDateClass(self::$_defaultDateClass);
@@ -145,7 +151,7 @@ class RequestChecker
             $class = static::CLASS_MAP[$class];
         }
         if (!class_exists($class)) {
-            throw new \InvalidArgumentException("Class {$class} does not exist.");
+            throw new InvalidArgumentException("Class {$class} does not exist.");
         }
         $this->_dateClass = $class;
         return $class;
@@ -168,9 +174,9 @@ class RequestChecker
      * @param mixed $value Value
      * @param array $options Options
      * @param \Throwable|null $prev Previous exception
-     * @return void
+     * @return never
      */
-    private function _throwException(string $message, $value, array $options, ?Throwable $prev = null): void
+    private function _throwException(string $message, mixed $value, array $options, ?Throwable $prev = null): never
     {
         if (is_array($value)) {
             $valueStr = '[';
@@ -201,7 +207,7 @@ class RequestChecker
      * @param mixed $value Value
      * @return string
      */
-    private function _formatValue($value): string
+    private function _formatValue(mixed $value): string
     {
         if ($value === null) {
             return 'null';
@@ -232,7 +238,7 @@ class RequestChecker
      * @param array $options Options.
      * @return int|null
      */
-    public function checkIntValue($value, array $options = []): ?int
+    public function checkIntValue(mixed $value, array $options = []): ?int
     {
         if (is_int($value)) {
             $intValue = $value;
@@ -265,9 +271,9 @@ class RequestChecker
      * @param mixed $value String value.
      * @param array $options Options.
      * @return string|null
-     * @throws \RequestChceker\Exception\RequestCheckException
+     * @throws \RequestChecker\Exception\RequestCheckException
      */
-    public function checkStringValue($value, array $options = []): ?string
+    public function checkStringValue(mixed $value, array $options = []): ?string
     {
         $allowEmpty = array_key_exists('default', $options);
         if ($value === null && $allowEmpty) {
@@ -297,7 +303,7 @@ class RequestChecker
      * @param array $options Options.
      * @return string|null
      */
-    public function checkString($value, array $options = []): ?string
+    public function checkString(mixed $value, array $options = []): ?string
     {
         $value = $this->checkStringValue($value, $options);
         return $value ?? $options['default'] ?? null;
@@ -316,7 +322,7 @@ class RequestChecker
      * @param array $options Options.
      * @return string|null
      */
-    public function checkStringRegex($value, string $regex, array $options = []): ?string
+    public function checkStringRegex(mixed $value, string $regex, array $options = []): ?string
     {
         $value = $this->checkStringValue($value, $options);
         if ($value === null) {
@@ -342,7 +348,7 @@ class RequestChecker
      * @param array $options Options.
      * @return int|null
      */
-    public function checkInt($value, array $options = []): ?int
+    public function checkInt(mixed $value, array $options = []): ?int
     {
         if (!is_int($value)) {
             $value = $this->checkStringValue($value, $options);
@@ -367,7 +373,7 @@ class RequestChecker
      * @param array $options Options.
      * @return float|null
      */
-    public function checkFloat($value, array $options = []): ?float
+    public function checkFloat(mixed $value, array $options = []): ?float
     {
         if (is_int($value)) {
             $value = (float)$value;
@@ -403,9 +409,9 @@ class RequestChecker
      *
      * @param mixed $value JSON value.
      * @param array $options Options.
-     * @return array|object|null
+     * @return mixed
      */
-    public function checkJSON($value, array $options = [])
+    public function checkJSON(mixed $value, array $options = []): mixed
     {
         $value = $this->checkStringValue($value, $options);
         if ($value === null) {
@@ -434,7 +440,7 @@ class RequestChecker
      * @param array $options Options.
      * @return \Cake\Chronos\ChronosDate|null
      */
-    public function checkDate($value, array $options = []): ?ChronosDate
+    public function checkDate(mixed $value, array $options = []): ?ChronosDate
     {
         $dateClass = $this->getDateClass();
         $formats = $options['formats'] ?? null;
@@ -504,7 +510,7 @@ class RequestChecker
      * @param array $options Options.
      * @return array|null
      */
-    public function checkArray($value, array $options = []): ?array
+    public function checkArray(mixed $value, array $options = []): ?array
     {
         $allowEmpty = array_key_exists('default', $options);
         if ($value === null || $value === '' || $value === [] || $value === ['']) {
@@ -559,7 +565,7 @@ class RequestChecker
      * @param array $options Options.
      * @return array|null
      */
-    public function checkStringArray($value, array $options = []): ?array
+    public function checkStringArray(mixed $value, array $options = []): ?array
     {
         $options['checkString'] = true;
         $allowEmpty = (bool)($options['allowEmpty'] ?? false);
@@ -598,7 +604,7 @@ class RequestChecker
      * @param array $options Options.
      * @return array|null
      */
-    public function checkIntArray($value, array $options = []): ?array
+    public function checkIntArray(mixed $value, array $options = []): ?array
     {
         $options['checkString'] = false;
         $options['converter'] = function ($elem) use ($options) {

@@ -29,7 +29,7 @@ class RequestEncodingCheckerMiddleware implements MiddlewareInterface
                 $request->getQueryParams(),
                 $request->getAttribute('params'),
                 $request->getCookieParams(),
-                $request->getServerParams()
+                $request->getServerParams(),
             );
         } catch (Exception $e) {
             $streamFactory = new StreamFactory();
@@ -43,12 +43,12 @@ class RequestEncodingCheckerMiddleware implements MiddlewareInterface
     /**
      * Check encoding in targets
      *
-     * @param ...$targets Targets
+     * @param mixed ...$targets Targets
      * @return void
      */
-    private function checkEncoding(...$targets): void
+    private function checkEncoding(mixed ...$targets): void
     {
-        array_walk_recursive($targets, function ($value, $key) {
+        array_walk_recursive($targets, function ($value, $key): void {
             $this->check($key);
             $this->check($value);
         });
@@ -60,7 +60,7 @@ class RequestEncodingCheckerMiddleware implements MiddlewareInterface
      * @param mixed $value Value to be checked
      * @return void
      */
-    private function check($value): void
+    private function check(mixed $value): void
     {
         if ($value instanceof UploadedFileInterface || $value === null || $value === '' || is_int($value)) {
             return;

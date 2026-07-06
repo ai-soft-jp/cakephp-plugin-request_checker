@@ -1,5 +1,5 @@
 {
-    "name": "ai-soft/cake-request-checker",
+    "name": "ai-soft-jp/cake-request-checker",
     "description": "RequestChecker",
     "keywords": ["cakephp"],
     "type": "cakephp-plugin",
@@ -11,6 +11,7 @@
         "laminas/laminas-diactoros": "^3.0"
     },
     "require-dev": {
+        "cakephp/event": "^5.0",
         "cakephp/i18n": "^5.0",
         "cakephp/cakephp-codesniffer": "*",
         "phake/phake": "*",

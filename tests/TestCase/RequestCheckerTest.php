@@ -535,8 +535,8 @@ class RequestCheckerTest extends TestCase
             [['foo'], ['minElements' => 1]],
             [['foo', 'bar'], ['maxElements' => 2]],
             [[['foo', 'bar']], ['checkString' => false]],
-            [['foo'], ['validator' => fn ($v) => $v === 'foo']],
-            [['foo', 'bar'], ['validator' => fn ($v) => preg_match('/^\w+$/sD', $v)]],
+            [['foo'], ['validator' => fn($v) => $v === 'foo']],
+            [['foo', 'bar'], ['validator' => fn($v) => preg_match('/^\w+$/sD', $v)]],
         ];
     }
 
@@ -702,7 +702,7 @@ class RequestCheckerTest extends TestCase
         return [
             [[1, 2], ['1', '2'], ['min' => 0]],
             [[1, 2], ['1', '2'], ['max' => 10]],
-            [[2, 4], ['2', '4'], ['validator' => fn ($v) => $v % 2 === 0]],
+            [[2, 4], ['2', '4'], ['validator' => fn($v) => $v % 2 === 0]],
         ];
     }
 
@@ -717,7 +717,7 @@ class RequestCheckerTest extends TestCase
         return [
             [['1', '2'], ['min' => 10]],
             [['1', '2'], ['max' => 0]],
-            [['2', '4'], ['validator' => fn ($v) => $v % 2 !== 0]],
+            [['2', '4'], ['validator' => fn($v) => $v % 2 !== 0]],
         ];
     }
 

@@ -14,19 +14,19 @@ class RequestCheckerTraitTest extends TestCase
 
     public function testSetRequestChecker()
     {
-        $this->_setRequestChecker();
-        $this->assertInstanceOf('RequestChecker\RequestChecker', $this->_getRequestChecker());
+        $this->setRequestChecker();
+        $this->assertInstanceOf('RequestChecker\RequestChecker', $this->getRequestChecker());
 
         $checker = new RequestChecker();
-        $this->_setRequestChecker($checker);
-        $this->assertSame($checker, $this->_getRequestChecker());
+        $this->setRequestChecker($checker);
+        $this->assertSame($checker, $this->getRequestChecker());
     }
 
     public function testCall()
     {
         $checker = Phake::mock(RequestChecker::class);
         Phake::when($checker)->checkString(Phake::anyParameters())->thenReturn('oki doki');
-        $this->_setRequestChecker($checker);
+        $this->setRequestChecker($checker);
         $this->assertEquals('oki doki', $this->_checkString('dead beef'));
     }
 }
