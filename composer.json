@@ -1,5 +1,5 @@
 {
-    "name": "ai-soft/cake-request-checker",
+    "name": "ai-soft-jp/cake-request-checker",
     "description": "RequestChecker for CakePHP",
     "keywords": ["cakephp"],
     "type": "cakephp-plugin",
@@ -36,6 +36,9 @@
         "cs-fix": "phpcbf --colors -p src/ tests/"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
