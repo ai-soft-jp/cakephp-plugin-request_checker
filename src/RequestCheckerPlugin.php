@@ -8,7 +8,7 @@ use Cake\Core\BasePlugin;
 /**
  * Plugin class
  */
-class Plugin extends BasePlugin
+class RequestCheckerPlugin extends BasePlugin
 {
     /**
      * The name of this plugin
